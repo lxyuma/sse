@@ -1,0 +1,65 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+<script type="text/javascript">
+window.addEventListener("load", function(){
+    var button = document.getElementById("connect");
+    var status = document.getElementById("status");
+    var output = document.getElementById("output");
+    var connectTime = document.getElementById("connectTime");
+    var source;
+
+    function connect(){
+        console.log("connecting");
+        source = new EventSource("stream");
+        source.addEventListener("message", function(e){
+            output.textContent = e.data;
+        }, false);
+
+        source.addEventListener("connecttime", function(e){
+            connectTime.textContent = "Connection was last established at :" + e.data;
+        }, false);
+
+        source.addEventListener("open", function(e){
+            button.value = "Disconnect";
+            button.onclick = function(e){
+                source.close();
+                button.value = "Connect";
+                button.onclick = connect;
+                status.textContent = "Connection closed!";
+            }
+            status.textContent = "Connection open!";
+        }, false);
+
+        source.addEventListener("error", function(e){
+            if(e.target.readyState === EventSource.CLOSED){
+                source.close();
+                status.textContent = "Connection closed!";
+            } else if (e.target.readyState === EventSource.CONNECTING) {
+                status.textContent = "Connection closed. Attempting to reconnect";
+            } else {
+                status.textContent = "Connection closed. Unknown error.";
+            }
+        }, false);
+    }
+
+    if (!!window.EventSource){
+        connect();
+    } else {
+        button.style.display = "none";
+        status.textContent = "Sorry, your browser does not support sse";
+    }
+}, false);
+</script>
+
+</head>
+<body>
+    <h1>SSE demo</h1>
+    <input type="button" id="connect" value="Connect"/><br/>
+    <span id="status">Connection closed</span><br/>
+    <span id="connectTime"></span><br/>
+    <span id="output"></span>
+</body>
+</html>
